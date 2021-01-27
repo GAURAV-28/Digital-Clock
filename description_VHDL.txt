@@ -1,0 +1,94 @@
+Description of the VHDL code for Digital Clock:
+--------------------------------
+Name: GAURAV JAIN 
+Entry Number: 2019CS10349
+--------------------------------
+NOTE:
+1. I have used the std_logic, std_logic_vector and integer of ieee.std.logic.1164 package
+2. The code is written in block by block fashion. I have first written the entity-architecture pair for digital_clock followed by entity-architecture pair for seven segment display.
+   I have combined the two components in the main entity-architecture pair.
+3. s0,s1,s2,s3 are states in the digital clock component:
+	s0: Normal Mode (HH:MM)
+	s1: Normal Mode (MM:SS)
+	s2: Time Setting Mode, minute can be changed
+	s3: Time Setting Mode, hour can be changed 
+--------------------------------
+Component 1: Digital Clock
+--------------------------------
+ENTITY:
+Entity contains 5 input ports and 8 output ports.
+The 5 input ports are:
+1. clk: used to input the clock. I have assumed it to be 100 MHz.
+2. dm: it is a bit used to represent the display mode button, by pressing this button user can go from HH:MM to MM:SS and vice versa.
+3. ts: it is a bit used to represent the time setting mode button, by pressing this button can go from normal mode to time setting mode and vice versa.
+4. inc: it is a bit used to represent the increasing button, if the clock is in time setting mode, by pressing this button user can increase minutes or seconds. There is provision of increasing time in a faster way by long pressing the button.
+5. dec: it is a bit used to represent the decreasing button, if the clock is in time setting mode, by pressing this button user can decrease minutes or seconds. There is provision of decreasing time in a faster way by long pressing the button.
+
+The 8 output ports are:
+1. d1,d2,d3,d4 represents the digits that are to be displayed on the seven segment display.
+2. d1_dp,d2_dp,d3_dp,d4_dp are bits used to represent the state of the 4 decimal points present on seven segment display.
+
+ARCHITECTURE:
+In architecture, the following signals are defined:
+1. sec is a signal of integer type used to represent the value of seconds. Its range is 0 to 60 and initialized 0.
+2. min is a signal of integer type used to represent the value of minutes. Its range is 0 to 60 and initialized 0.
+3. hr is a signal of integer type used to represent the value of  hours. Its range is 0 to 24 and initialized 0.
+4. ss is a temporary signal of integer type used to represent the value of seconds. Its range is 0 to 60 and initialized 0.
+4. mm is a temporary signal of integer type used to represent the value of minutes. Its range is 0 to 60 and initialized 0.
+5. hh is a signal of integer type used to represent the value of  hours. Its range is 0 to 24 and initialized 0.
+6. count and count1 are integer type used for counting the number of rising edges of the main clock (100 MHz).
+7. states are defined as s0,s1,s2,s3 
+8. state is a signal used to define the present state of the clock. It is initialized as s0.
+9. tsc and dmc are two signals used to count the time for which ts and dm are pressed respectively.
+10. cc,dd,v,s are signals of integer type used to count the time for which inc/dec button is pressed and further increment/decrement is done using the values of these signals.
+11. clk_1hz is a signal of bit type which is used as a clk of 1 Hz, produced by a process
+
+The first process named as button, is sensitive on clk (100 MHz) and used to change states whenever ts, dm buttons are pressed or to change min or hr whenever inc, dec are pressed.
+The normal clock keeps going on inside process. Whenever there is a rising edge of clk, the value of count is increased by 1. When the value of count reaches 100000000. 
+ss is increased by 1 and if ss is 60, it is made 0 and mm is increased and if mm is 60, it is made 0 and hh is increased by 1 and if hh is 24, it is made 0.
+On every rising edge, the process checks for value of ts and sees if it is 1, it will increase tsc by 1. If the ts button is pressed for sufficiently long time (1/4th of a second), then the state will be changed according to the current state.
+Similarly, the process checks for value of dm and if it is 1 for sufficiently long time, it will be changed.
+The inc and dec signals are also checked by the process but, there is a special condition in these signals. If they are 1 for more than 1 second (long press) then, mm or hh is increased/decreased by 1 in every 1/4th second after 1s. If they are 1 for less than 1 second (short press), then value of mm or hh is increased only 1 time.
+
+After the end of the first process, sec min and hr are assigned the values of ss mm and hh respectively.
+To make the last decimal point of seven segment display, we need a clk of frequency 1 Hz.
+The second process, sensitive on main clock is used to make the clk of 1 Hz using count1, which is denoted by clk_1hz.
+
+The output depends on the present of the clock. Thus, if/else statements are used to assign values to d1,d2,d3,d4,d1_dp,d2_dp,d3_dp,d4_dp.
+------------------------------------
+Component 2: Seven Segment Display
+------------------------------------
+ENTITY:
+There are 9 input and 3 output ports. The 8 outputs of component 1 are inputed here along with the main clock.
+The outputs of this component are:
+an: 4 bit_vector representing which anode is currently on.
+disp: 7 bit_vector representing the segments which are on while displaying a particular digit.
+dp: a bit representing the decimal point next to the currently on anode.
+
+ARCHITECTURE:
+In architecture, the following signals are defined:
+1. count is a signal of integer type used to count no of rising edges in the main clock (100 MHz). It is initialized as 0.
+2. anc is a signal of integer type used to denote the anode which is currently on. It is initialized as 0.
+3. an_temp is a temporary signal used to put values of an output based on the anode currently on.
+
+The process named as anode_clock is used to make a sequence of 0-1-2-3-0.. whose refresh time is 10 ms and the values of the sequences are equivalent to the anode currently on.
+Now, another process named as display, sensitive on the signal anc is used to output the values of an_temp, disp and dp on basis of the current value of anc.
+an is given the value of an_temp.
+--------------------------------
+Combined Module
+--------------------------------
+ENTITY:
+There are 5 inputs which are same as that of component 1 and the outputs are same as component 2.
+
+ARCHITECTURE:
+The following signals are defined:
+1. d1,d2,d3,d4 are signals of integer type ranging from 0 to 9 used to represent the output values of componenet 1.
+2. d1_dp,d2_dp,d3_dp,d4_dp are signals of bit type used to represent the output values of component 1.
+
+The first component's input is mapped to the the respective values of the given input and output is mapped to the signals defined.
+These signals are used as input to map the second component and the outputs are mapped to the output of the combined module.
+
+
+
+
+----
